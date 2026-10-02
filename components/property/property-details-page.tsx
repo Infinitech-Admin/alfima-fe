@@ -240,7 +240,39 @@ function formatPriceRange(
   }
   return `${formatPrice(minNum ?? maxNum)}${suffix}`;
 }
+function parsePriceValue(v: unknown): number | null {
+  if (v == null || v === "") return null;
+  const n =
+    typeof v === "number" ? v : parseFloat(String(v).replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
 
+// Handles: 5600000, "5600000", "5,600,000", "5600000-7100000", "5.6M – 7.1M" (digits only)
+// Also accepts explicit min/max fields if your backend has them.
+function getPriceBounds(
+  raw: unknown,
+  explicitMin?: unknown,
+  explicitMax?: unknown,
+): { min: number | null; max: number | null } {
+  let min = parsePriceValue(explicitMin);
+  let max = parsePriceValue(explicitMax);
+
+  if (min == null && max == null && raw != null) {
+    if (
+      typeof raw === "string" &&
+      /\d\s*[-–—]\s*₱?\s*\d|\d\s+to\s+\d/i.test(raw)
+    ) {
+      const [a, b] = raw.split(/\s*(?:-|–|—|\bto\b)\s*/i);
+      min = parsePriceValue(a);
+      max = parsePriceValue(b);
+    } else {
+      min = parsePriceValue(raw);
+    }
+  }
+
+  if (min != null && max != null && min > max) [min, max] = [max, min];
+  return { min, max };
+}
 const ASSUMED_INTEREST_RATE = 6.5; // annual %
 const ASSUMED_LOAN_TERM_YEARS = 20;
 const DOWN_PAYMENT_PERCENT = 5;
@@ -274,14 +306,11 @@ function pesos(amount: number): string {
 
 function EstimatedPayments({
   price,
+  maxPrice,
   availableFinancing,
 }: {
   price: number;
-
-  // Example:
-  // ["in_house_financing", "bank_financing"]
-  //
-  // If empty/undefined, all financing options are shown.
+  maxPrice?: number | null;
   availableFinancing?: string[];
 }) {
   // ── Financing availability ────────────────────────────────────────────────
@@ -327,26 +356,25 @@ function EstimatedPayments({
 
   // ── Price calculation ─────────────────────────────────────────────────────
 
-  const listPrice = Number(price) || 0;
-
-  // 5% downpayment
-  const downPayment = listPrice * (DOWN_PAYMENT_PERCENT / 100);
-
-  // Remaining 95% becomes the loan balance
-  const loanAmount = listPrice - downPayment;
-
   // ── Monthly mortgage calculation ─────────────────────────────────────────
+  const monthlyFor = (listPrice: number) => {
+    const loanAmount = listPrice * (1 - DOWN_PAYMENT_PERCENT / 100);
+    const monthlyRate = ASSUMED_INTEREST_RATE / 100 / 12;
+    const numberOfPayments = ASSUMED_LOAN_TERM_YEARS * 12;
 
-  const monthlyRate = ASSUMED_INTEREST_RATE / 100 / 12;
-
-  const numberOfPayments = ASSUMED_LOAN_TERM_YEARS * 12;
-
-  const monthlyMortgage =
-    monthlyRate === 0
+    return monthlyRate === 0
       ? loanAmount / numberOfPayments
       : (loanAmount *
           (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments))) /
-        (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+          (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+  };
+
+  const minPrice = Number(price) || 0;
+  const minMonthly = monthlyFor(minPrice);
+
+  // Only show a range when there is a higher max price
+  const hasRange = maxPrice != null && maxPrice > minPrice;
+  const maxMonthly = hasRange ? monthlyFor(maxPrice!) : null;
 
   return (
     <div className="mb-4 space-y-5">
@@ -357,8 +385,11 @@ function EstimatedPayments({
       <div className="space-y-2 mb-6">
         <p className="text-sm text-white/80">Estimated Monthly</p>
 
-        <h3 className="text-3xl font-bold leading-tight text-white">
-          {pesos(monthlyMortgage)}
+        <h3
+          className={`${hasRange ? "text-2xl" : "text-3xl"} font-bold leading-tight text-white`}
+        >
+          {pesos(minMonthly)}
+          {maxMonthly != null && <> – {pesos(maxMonthly)}</>}
 
           <span className="ml-1 text-lg font-normal text-white/80">/mo</span>
         </h3>
@@ -1276,6 +1307,13 @@ function LeadFormStep({
   const isLocked = (field: "name" | "phone" | "email") =>
     !!lockedFields?.[field];
 
+  const { min: tMin, max: tMax } = getPriceBounds(property.price);
+  const tourPrice = formatPriceRange(
+    tMin,
+    tMax,
+    property.listing_type === "rent",
+  );
+
   const runValidator = (key: keyof LeadForm, val: string): string | null => {
     if (key in VALIDATORS)
       return VALIDATORS[key as ValidatableField](val, form);
@@ -1923,6 +1961,13 @@ function ScheduleTourModal({
     if (field === "name") return !!user?.name;
     if (field === "phone") return !!user?.phone;
     if (field === "email") return !!user?.email;
+
+    const { min: tMin, max: tMax } = getPriceBounds(property.price);
+    const tourPrice = formatPriceRange(
+      tMin,
+      tMax,
+      property.listing_type === "rent",
+    );
     return false;
   };
 
@@ -3596,13 +3641,20 @@ export default function PropertyDetailsPage({
 
   const currentUnitPhoto = allUnitPhotos[unitLightboxIndex];
 
-  const priceDisplay = (() => {
-    const price =
-      listingType === "rent"
-        ? ((property as any).price_per_month ?? (property as any).pricePerMonth)
-        : (property as any).price;
-    return formatPrice(price) + (listingType === "rent" ? "/month" : "");
-  })();
+  const isRent = listingType === "rent";
+  const { min: priceMin, max: priceMax } = isRent
+    ? getPriceBounds(
+        (property as any).price_per_month ??
+          (property as any).pricePerMonth ??
+          (property as any).price,
+      )
+    : getPriceBounds(
+        (property as any).price,
+        (property as any).price_min ?? (property as any).priceMin,
+        (property as any).price_max ?? (property as any).priceMax,
+      );
+
+  const priceDisplay = formatPriceRange(priceMin, priceMax, isRent);
 
   const propertyId = Number(property.id);
 
@@ -4307,7 +4359,7 @@ export default function PropertyDetailsPage({
                   <div className="space-y-4">
                     {/* Title */}
                     <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-balance">
-                      ₱{Number(property.price).toLocaleString("en-PH")}
+                      {priceDisplay}
                     </h1>
                     <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-balance">
                       {property.title}
@@ -4526,25 +4578,19 @@ export default function PropertyDetailsPage({
           {/* ── Sidebar ── */}
           <div className="space-y-6">
             <div className="glass rounded-xl px-8 sm:px-10 pt-10 pb-4 sticky top-24">
-              {listingType !== "rent" && Number(property.price) > 0 ? (
-                <>
-                  <EstimatedPayments
-                    price={Number(property.price)}
-                    availableFinancing={financingOptions}
-                  />
-                </>
+              {!isRent && priceMin ? (
+                <EstimatedPayments
+                  price={priceMin}
+                  maxPrice={priceMax}
+                  availableFinancing={financingOptions}
+                />
               ) : (
                 <>
                   <p className="text-white text-sm mb-2">
-                    {listingType === "rent" ? "Monthly Rent" : "Price"}
+                    {isRent ? "Monthly Rent" : "Price"}
                   </p>
                   <h3 className="text-2xl font-bold text-white mb-6">
-                    {listingType === "rent"
-                      ? formatPrice(
-                          (property as any).price_per_month ??
-                            (property as any).pricePerMonth,
-                        ) + "/month"
-                      : formatPrice(property.price)}
+                    {priceDisplay}
                   </h3>
                 </>
               )}
