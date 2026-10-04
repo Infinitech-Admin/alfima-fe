@@ -17,7 +17,7 @@ async function proxyJson(res: Response): Promise<NextResponse> {
   return NextResponse.json(await res.json(), { status: res.status });
 }
 
-// GET /api/admin/news-events/events — list all events
+// GET list
 export async function GET(req: NextRequest) {
   try {
     const token = req.cookies.get("auth_token")?.value;
@@ -26,13 +26,9 @@ export async function GET(req: NextRequest) {
 
     const res = await fetch(`${LARAVEL}/api/admin/news-events/events`, {
       method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
-
     return proxyJson(res);
   } catch (err) {
     console.error("[admin/news-events/events GET]", err);
@@ -43,7 +39,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/admin/news-events/events — create a new event (multipart)
+// POST create (multipart, may include image)
 export async function POST(req: NextRequest) {
   try {
     const token = req.cookies.get("auth_token")?.value;
@@ -51,16 +47,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.formData();
-
     const res = await fetch(`${LARAVEL}/api/admin/news-events/events`, {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
       body,
     });
-
     return proxyJson(res);
   } catch (err) {
     console.error("[admin/news-events/events POST]", err);
