@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 const IMAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_URL ?? "";
+const MAX_UPLOAD_IMAGE_SIZE = 30 * 1024 * 1024;
 
 // ─── Adjust these two to match your actual Laravel routes ───────────────────
 // Verify against routes/api.php — the Network tab shows the final path
@@ -102,6 +103,11 @@ async function apiFetch(url: string, opts?: RequestInit) {
   const res = await fetch(url, opts);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    if (res.status === 413) {
+      throw new Error(
+        "The upload is too large for the server. Try removing the image or shortening the text.",
+      );
+    }
     const errors = data?.errors
       ? Object.values(data.errors).flat().join(" ")
       : "";
@@ -110,6 +116,63 @@ async function apiFetch(url: string, opts?: RequestInit) {
     );
   }
   return data;
+}
+
+async function compressImage(file: File): Promise<File> {
+  if (file.size <= MAX_UPLOAD_IMAGE_SIZE) return file;
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error("This image could not be processed. Please choose another.");
+  }
+
+  try {
+    const scale = Math.min(1, 1920 / Math.max(bitmap.width, bitmap.height));
+    let width = Math.round(bitmap.width * scale);
+    let height = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Image compression is not supported.");
+
+    while (Math.max(width, height) >= 320) {
+      canvas.width = width;
+      canvas.height = height;
+      context.clearRect(0, 0, width, height);
+      context.drawImage(bitmap, 0, 0, width, height);
+
+      for (const quality of [0.82, 0.7, 0.58]) {
+        const blob = await new Promise<Blob | null>((resolve) =>
+          canvas.toBlob(resolve, "image/webp", quality),
+        );
+        if (!blob) throw new Error("This image could not be compressed.");
+
+        if (blob.size <= MAX_UPLOAD_IMAGE_SIZE) {
+          const baseName = file.name.replace(/\.[^.]+$/, "");
+          const extension =
+            blob.type === "image/webp"
+              ? "webp"
+              : blob.type === "image/jpeg"
+                ? "jpg"
+                : "png";
+          return new File([blob], `${baseName}.${extension}`, {
+            type: blob.type,
+            lastModified: file.lastModified,
+          });
+        }
+      }
+
+      width = Math.round(width * 0.8);
+      height = Math.round(height * 0.8);
+    }
+  } finally {
+    bitmap.close();
+  }
+
+  throw new Error(
+    "This image is too large to compress. Please choose a smaller image.",
+  );
 }
 
 // Builds multipart form data. Updates are sent as POST + _method=PUT
@@ -127,7 +190,9 @@ async function saveItem<T extends { id?: number; _imageFile?: File | null }>(
     if (typeof v === "boolean") v = v ? "1" : "0";
     fd.append(k, String(v));
   });
-  if (item._imageFile) fd.append("image", item._imageFile);
+  if (item._imageFile) {
+    fd.append("image", await compressImage(item._imageFile));
+  }
 
   if (isNew) {
     return apiFetch(baseUrl, { method: "POST", body: fd });
@@ -259,11 +324,14 @@ function ImagePicker({
         <input
           id={inputId}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp"
           className="hidden"
           onChange={(e) => onFile(e.target.files?.[0])}
         />
       </div>
+      <p className="text-slate-400 text-xs mt-2">
+        Images over 3 MB are compressed before upload.
+      </p>
     </div>
   );
 }
