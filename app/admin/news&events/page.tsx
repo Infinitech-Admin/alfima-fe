@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from "react";
 import {
-  Save,
   Plus,
   Trash2,
   Edit2,
-  Eye,
   Loader2,
   Newspaper,
   CalendarDays,
@@ -23,11 +21,17 @@ import {
 
 const IMAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_URL ?? "";
 
-// ─── Adjust these two to match your actual Laravel routes ───────────────────
-// Verify against routes/api.php — the Network tab shows the final path
-// segment only ("articles" / "events"), so double check the full prefix.
+// ─── Adjust these to match your actual Laravel routes ───────────────────────
 const NEWS_API = "/api/admin/news-events/articles";
 const EVENTS_API = "/api/admin/news-events/events";
+const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+];
 
 const NEWS_CATEGORIES = [
   "Market Insights",
@@ -48,7 +52,6 @@ interface NewsItem {
   sort_order: number;
   image?: string;
   _imageFile?: File | null;
-  _imagePreview?: string | null;
 }
 
 interface EventItem {
@@ -62,7 +65,6 @@ interface EventItem {
   sort_order: number;
   image?: string;
   _imageFile?: File | null;
-  _imagePreview?: string | null;
 }
 
 const NEWS_FIELDS = [
@@ -102,18 +104,23 @@ async function apiFetch(url: string, opts?: RequestInit) {
   const res = await fetch(url, opts);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    if (res.status === 413) {
+      throw new Error("The image is too large for the server.");
+    }
     const errors = data?.errors
       ? Object.values(data.errors).flat().join(" ")
       : "";
     throw new Error(
-      data?.message ? `${data.message} ${errors}` : "Something went wrong.",
+      data?.message
+        ? `${data.message} ${errors}`
+        : (data?.error ?? "Something went wrong."),
     );
   }
   return data;
 }
 
-// Builds multipart form data. Updates are sent as POST + _method=PUT
-// because PHP can't parse multipart bodies on native PUT requests.
+// Sends the form fields plus the image file (if one was picked) in a single
+// multipart request. Updates are a POST to /{id} (Laravel only registers POST).
 async function saveItem<T extends { id?: number; _imageFile?: File | null }>(
   baseUrl: string,
   item: T,
@@ -129,20 +136,44 @@ async function saveItem<T extends { id?: number; _imageFile?: File | null }>(
   });
   if (item._imageFile) fd.append("image", item._imageFile);
 
-  if (isNew) {
-    return apiFetch(baseUrl, { method: "POST", body: fd });
-  }
-  // No _method=PUT spoofing — the Laravel route for updates only
-  // registers a real POST (see "Supported methods" in the error),
-  // not PUT. Sending _method=PUT makes Laravel treat this as an
-  // actual PUT internally, which then 405s.
-  return apiFetch(`${baseUrl}/${item.id}`, { method: "POST", body: fd });
+  const url = isNew ? baseUrl : `${baseUrl}/${item.id}`;
+  return apiFetch(url, { method: "POST", body: fd });
 }
 
 function imgUrl(src?: string | null) {
   if (!src) return null;
   if (src.startsWith("http://") || src.startsWith("https://")) return src;
   return `${IMAGE_BASE}/${src}`;
+}
+
+// Holds the picked file + a preview URL for both modals.
+function useImageFile() {
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  // Free the blob URL when it changes or the modal closes
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  const pick = (f: File | undefined, onError: (m: string | null) => void) => {
+    if (!f) return;
+    if (!ALLOWED_TYPES.includes(f.type)) {
+      onError("Use a JPG, PNG, WebP, GIF or AVIF image.");
+      return;
+    }
+    if (f.size > MAX_IMAGE_BYTES) {
+      onError("Image must be 50MB or smaller.");
+      return;
+    }
+    onError(null);
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
+  };
+
+  return { file, preview, pick };
 }
 
 // ─── UI primitives ───────────────────────────────────────────────────────
@@ -259,9 +290,12 @@ function ImagePicker({
         <input
           id={inputId}
           type="file"
-          accept="image/*"
+          accept={ALLOWED_TYPES.join(",")}
           className="hidden"
-          onChange={(e) => onFile(e.target.files?.[0])}
+          onChange={(e) => {
+            onFile(e.target.files?.[0]);
+            e.target.value = ""; // allow re-picking the same file
+          }}
         />
       </div>
     </div>
@@ -386,8 +420,7 @@ function NewsFormModal({
       sort_order: 0,
     },
   );
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const img = useImageFile();
 
   const setF = (k: keyof NewsItem, v: any) =>
     setForm((p) => ({ ...p, [k]: v }));
@@ -402,7 +435,7 @@ function NewsFormModal({
     try {
       await saveItem<NewsItem>(
         NEWS_API,
-        { ...form, _imageFile: imageFile },
+        { ...form, _imageFile: img.file },
         NEWS_FIELDS,
         mode === "create",
       );
@@ -470,12 +503,8 @@ function NewsFormModal({
               label="Cover Image"
               inputId="news-modal-img"
               existingSrc={imgUrl(form.image)}
-              previewSrc={imagePreview}
-              onFile={(f) => {
-                if (!f) return;
-                setImageFile(f);
-                setImagePreview(URL.createObjectURL(f));
-              }}
+              previewSrc={img.preview}
+              onFile={(f) => img.pick(f, setError)}
             />
             <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer select-none">
               <input
@@ -547,8 +576,7 @@ function EventFormModal({
       sort_order: 0,
     },
   );
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const img = useImageFile();
 
   const setF = (k: keyof EventItem, v: any) =>
     setForm((p) => ({ ...p, [k]: v }));
@@ -563,7 +591,7 @@ function EventFormModal({
     try {
       await saveItem<EventItem>(
         EVENTS_API,
-        { ...form, _imageFile: imageFile },
+        { ...form, _imageFile: img.file },
         EVENT_FIELDS,
         mode === "create",
       );
@@ -642,12 +670,8 @@ function EventFormModal({
               label="Cover Image"
               inputId="event-modal-img"
               existingSrc={imgUrl(form.image)}
-              previewSrc={imagePreview}
-              onFile={(f) => {
-                if (!f) return;
-                setImageFile(f);
-                setImagePreview(URL.createObjectURL(f));
-              }}
+              previewSrc={img.preview}
+              onFile={(f) => img.pick(f, setError)}
             />
 
             {error && (
