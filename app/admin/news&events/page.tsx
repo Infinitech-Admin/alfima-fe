@@ -106,13 +106,9 @@ async function apiFetch(url: string, opts?: RequestInit) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (res.status === 413) {
-<<<<<<< HEAD
       throw new Error(
         "The upload is too large for the server. Try removing the image or shortening the text.",
       );
-=======
-      throw new Error("The image is too large for the server.");
->>>>>>> 48b2aec8b5a57a44154deb7e6848897c73138964
     }
     const errors = data?.errors
       ? Object.values(data.errors).flat().join(" ")
@@ -126,7 +122,6 @@ async function apiFetch(url: string, opts?: RequestInit) {
   return data;
 }
 
-<<<<<<< HEAD
 async function compressImage(file: File): Promise<File> {
   if (file.size <= MAX_UPLOAD_IMAGE_SIZE) return file;
 
@@ -186,10 +181,6 @@ async function compressImage(file: File): Promise<File> {
 
 // Builds multipart form data. Updates are sent as POST + _method=PUT
 // because PHP can't parse multipart bodies on native PUT requests.
-=======
-// Sends the form fields plus the image file (if one was picked) in a single
-// multipart request. Updates are a POST to /{id} (Laravel only registers POST).
->>>>>>> 48b2aec8b5a57a44154deb7e6848897c73138964
 async function saveItem<T extends { id?: number; _imageFile?: File | null }>(
   baseUrl: string,
   item: T,
@@ -361,11 +352,7 @@ function ImagePicker({
         <input
           id={inputId}
           type="file"
-<<<<<<< HEAD
           accept="image/jpeg,image/png,image/webp"
-=======
-          accept={ALLOWED_TYPES.join(",")}
->>>>>>> 48b2aec8b5a57a44154deb7e6848897c73138964
           className="hidden"
           onChange={(e) => {
             onFile(e.target.files?.[0]);
