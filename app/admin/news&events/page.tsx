@@ -20,19 +20,15 @@ import {
 } from "lucide-react";
 
 const IMAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_URL ?? "";
-const MAX_UPLOAD_IMAGE_SIZE = 30 * 1024 * 1024;
 
 // ─── Adjust these to match your actual Laravel routes ───────────────────────
 const NEWS_API = "/api/admin/news-events/articles";
 const EVENTS_API = "/api/admin/news-events/events";
-const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
-const ALLOWED_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/avif",
-];
+// Replace the two size constants with one pair:
+const MAX_IMAGE_BYTES = 30 * 1024 * 1024;        // largest file a user may pick
+const MAX_UPLOAD_IMAGE_SIZE = 5 * 1024 * 1024;   // compress anything above this
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const NEWS_CATEGORIES = [
   "Market Insights",
