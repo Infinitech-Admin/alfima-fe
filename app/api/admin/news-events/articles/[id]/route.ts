@@ -6,6 +6,8 @@ const LARAVEL =
   process.env.NEXT_PUBLIC_API_URL ??
   "http://localhost:8000";
 
+type Ctx = { params: Promise<{ id: string }> };
+
 async function proxyJson(res: Response): Promise<NextResponse> {
   const contentType = res.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) {
@@ -17,28 +19,46 @@ async function proxyJson(res: Response): Promise<NextResponse> {
   return NextResponse.json(await res.json(), { status: res.status });
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const { id } = await params;
+function target(id: string) {
+  return `${LARAVEL}/api/admin/news-events/articles/${encodeURIComponent(id)}`;
+}
 
+// GET one
+export async function GET(req: NextRequest, { params }: Ctx) {
+  try {
     const token = req.cookies.get("auth_token")?.value;
     if (!token)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const body = await req.formData();
+    const { id } = await params;
+    const res = await fetch(target(id), {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    return proxyJson(res);
+  } catch (err) {
+    console.error("[admin/news-events/articles/[id] GET]", err);
+    return NextResponse.json(
+      { error: "Failed to connect to API" },
+      { status: 500 },
+    );
+  }
+}
 
-    const res = await fetch(`${LARAVEL}/api/admin/news-events/articles/${id}`, {
+// POST = update (multipart, may include a new image)
+export async function POST(req: NextRequest, { params }: Ctx) {
+  try {
+    const token = req.cookies.get("auth_token")?.value;
+    if (!token)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { id } = await params;
+    const body = await req.formData();
+    const res = await fetch(target(id), {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
       body,
     });
-
     return proxyJson(res);
   } catch (err) {
     console.error("[admin/news-events/articles/[id] POST]", err);
@@ -49,25 +69,18 @@ export async function POST(
   }
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+// DELETE
+export async function DELETE(req: NextRequest, { params }: Ctx) {
   try {
-    const { id } = await params;
-
     const token = req.cookies.get("auth_token")?.value;
     if (!token)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const res = await fetch(`${LARAVEL}/api/admin/news-events/articles/${id}`, {
+    const { id } = await params;
+    const res = await fetch(target(id), {
       method: "DELETE",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
     });
-
     return proxyJson(res);
   } catch (err) {
     console.error("[admin/news-events/articles/[id] DELETE]", err);

@@ -1,3 +1,4 @@
+// File location: app/api/admin/news-events/events/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 const LARAVEL =
@@ -18,28 +19,25 @@ async function proxyJson(res: Response): Promise<NextResponse> {
   return NextResponse.json(await res.json(), { status: res.status });
 }
 
-export async function PUT(req: NextRequest, { params }: Ctx) {
+function target(id: string) {
+  return `${LARAVEL}/api/admin/news-events/events/${encodeURIComponent(id)}`;
+}
+
+// GET one
+export async function GET(req: NextRequest, { params }: Ctx) {
   try {
-    const { id } = await params;
     const token = req.cookies.get("auth_token")?.value;
     if (!token)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const incoming = await req.formData();
-    incoming.set("_method", "PUT");
-
-    const res = await fetch(`${LARAVEL}/api/admin/news-events/events/${id}`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: incoming,
+    const { id } = await params;
+    const res = await fetch(target(id), {
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+      cache: "no-store",
     });
-
     return proxyJson(res);
   } catch (err) {
-    console.error("[admin/news-events/events/:id PUT]", err);
+    console.error("[admin/news-events/events/[id] GET]", err);
     return NextResponse.json(
       { error: "Failed to connect to API" },
       { status: 500 },
@@ -47,24 +45,45 @@ export async function PUT(req: NextRequest, { params }: Ctx) {
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: Ctx) {
+// POST = update (multipart, may include a new image)
+export async function POST(req: NextRequest, { params }: Ctx) {
   try {
-    const { id } = await params;
     const token = req.cookies.get("auth_token")?.value;
     if (!token)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const res = await fetch(`${LARAVEL}/api/admin/news-events/events/${id}`, {
-      method: "DELETE",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+    const { id } = await params;
+    const body = await req.formData();
+    const res = await fetch(target(id), {
+      method: "POST",
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+      body,
     });
-
     return proxyJson(res);
   } catch (err) {
-    console.error("[admin/news-events/events/:id DELETE]", err);
+    console.error("[admin/news-events/events/[id] POST]", err);
+    return NextResponse.json(
+      { error: "Failed to connect to API" },
+      { status: 500 },
+    );
+  }
+}
+
+// DELETE
+export async function DELETE(req: NextRequest, { params }: Ctx) {
+  try {
+    const token = req.cookies.get("auth_token")?.value;
+    if (!token)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { id } = await params;
+    const res = await fetch(target(id), {
+      method: "DELETE",
+      headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+    });
+    return proxyJson(res);
+  } catch (err) {
+    console.error("[admin/news-events/events/[id] DELETE]", err);
     return NextResponse.json(
       { error: "Failed to connect to API" },
       { status: 500 },
