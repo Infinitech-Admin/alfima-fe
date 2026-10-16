@@ -250,7 +250,7 @@ export default function ListPropertyPage() {
   // ── Validation ────────────────────────────────────────────────────────────
   const validate = (): string[] => {
     const e: string[] = [];
-    // if (!formData.title.trim()) e.push("Property title is required.");
+    if (!formData.title.trim()) e.push("Property title is required.");
     if (!formData.description.trim()) e.push("Description is required.");
     // if (!formData.yearBuilt.trim()) e.push("Year built is required.");
     if (!formData.address.trim()) e.push("Street address is required.");
@@ -260,8 +260,8 @@ export default function ListPropertyPage() {
     // if (!formData.bedrooms.trim()) e.push("Number of bedrooms is required.");
     // if (!formData.bathrooms.trim()) e.push("Number of bathrooms is required.");
     // if (!formData.area.trim()) e.push("Floor area is required.");
-    // if (formData.listingType === "sale" && !formData.price.trim())
-    //   e.push("Asking price is required.");
+    if (formData.listingType === "sale" && !formData.price.trim())
+      e.push("Selling price is required for properties listed for sale.");
     // if (formData.listingType === "rent" && !formData.pricePerMonth.trim())
     //   e.push("Monthly rent is required.");
     return e;
@@ -328,8 +328,8 @@ export default function ListPropertyPage() {
         } else {
           setApiError(
             data.message ??
-              data.error ??
-              "Something went wrong. Please try again.",
+            data.error ??
+            "Something went wrong. Please try again.",
           );
         }
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -463,25 +463,25 @@ export default function ListPropertyPage() {
     label: string;
     icon: React.ReactNode;
   }[] = [
-    { value: "house", label: "House", icon: <Home className="w-5 h-5" /> },
-    {
-      value: "apartment",
-      label: "Apartment",
-      icon: <Building2 className="w-5 h-5" />,
-    },
-    { value: "condo", label: "Condo", icon: <Landmark className="w-5 h-5" /> },
-    {
-      value: "townhouse",
-      label: "Townhouse",
-      icon: <Home className="w-5 h-5" />,
-    },
-    { value: "lot", label: "Lot", icon: <Trees className="w-5 h-5" /> },
-    {
-      value: "commercial",
-      label: "Commercial",
-      icon: <Store className="w-5 h-5" />,
-    },
-  ];
+      { value: "house", label: "House", icon: <Home className="w-5 h-5" /> },
+      {
+        value: "apartment",
+        label: "Apartment",
+        icon: <Building2 className="w-5 h-5" />,
+      },
+      { value: "condo", label: "Condo", icon: <Landmark className="w-5 h-5" /> },
+      {
+        value: "townhouse",
+        label: "Townhouse",
+        icon: <Home className="w-5 h-5" />,
+      },
+      { value: "lot", label: "Lot", icon: <Trees className="w-5 h-5" /> },
+      {
+        value: "commercial",
+        label: "Commercial",
+        icon: <Store className="w-5 h-5" />,
+      },
+    ];
 
   const amenityOptions = [
     { name: "Pool", emoji: "🏊" },
@@ -585,22 +585,20 @@ export default function ListPropertyPage() {
               <button
                 type="button"
                 onClick={() => setActiveSection(i)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                  activeSection === i
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${activeSection === i
                     ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
                     : activeSection > i
                       ? "bg-white/10 text-white/70"
                       : "text-white/30"
-                }`}
+                  }`}
               >
                 <span
-                  className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                    activeSection > i
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${activeSection > i
                       ? "bg-green-500 text-white"
                       : activeSection === i
                         ? "bg-white/20"
                         : "bg-white/10"
-                  }`}
+                    }`}
                 >
                   {activeSection > i ? <Check className="w-3 h-3" /> : i + 1}
                 </span>
@@ -674,7 +672,7 @@ export default function ListPropertyPage() {
                 {/* Listing Type Toggle */}
                 <div className="mb-8">
                   <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">
-                    Listing Type
+                    Listing Type <span className="text-red-400">*</span>
                   </label>
                   <div className="inline-flex bg-black/20 rounded-2xl p-1.5 border border-white/10">
                     {(["sale", "rent"] as ListingType[]).map((type) => (
@@ -684,11 +682,10 @@ export default function ListPropertyPage() {
                         onClick={() =>
                           setFormData((p) => ({ ...p, listingType: type }))
                         }
-                        className={`px-8 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${
-                          formData.listingType === type
+                        className={`px-8 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${formData.listingType === type
                             ? "bg-orange-600 text-white shadow-lg shadow-orange-600/40"
                             : "text-white/40 hover:text-white/70"
-                        }`}
+                          }`}
                       >
                         {type === "sale" ? "🏠 For Sale" : "🔑 For Rent"}
                       </button>
@@ -696,10 +693,32 @@ export default function ListPropertyPage() {
                   </div>
                 </div>
 
+                {formData.listingType === "sale" && (
+                  <div className="mb-8">
+                    <label
+                      htmlFor="price"
+                      className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-3"
+                    >
+                      Selling Price (PHP) <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      id="price"
+                      type="number"
+                      name="price"
+                      min="0"
+                      step="any"
+                      value={formData.price}
+                      onChange={handleChange}
+                      placeholder="e.g. 4500000"
+                      className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:border-orange-500/50 transition-all"
+                    />
+                  </div>
+                )}
+
                 {/* Property Type Grid */}
                 <div className="mb-8">
                   <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">
-                    Property Type
+                    Property Type <span className="text-red-400">*</span>
                   </label>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                     {propertyTypes.map(({ value, label, icon }) => (
@@ -709,11 +728,10 @@ export default function ListPropertyPage() {
                         onClick={() =>
                           setFormData((p) => ({ ...p, propertyType: value }))
                         }
-                        className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${
-                          formData.propertyType === value
+                        className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 ${formData.propertyType === value
                             ? "border-orange-500 bg-orange-600/20 text-white"
                             : "border-white/10 bg-white/5 text-white/40 hover:border-white/20 hover:text-white/70"
-                        }`}
+                          }`}
                       >
                         {icon}
                         <span className="text-xs font-semibold">{label}</span>
@@ -725,7 +743,7 @@ export default function ListPropertyPage() {
                 {/* Title */}
                 <div className="mb-6">
                   <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">
-                    Property Title
+                    Property Title <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -740,7 +758,7 @@ export default function ListPropertyPage() {
                 {/* Description */}
                 <div className="mb-6">
                   <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">
-                    Description
+                    Description <span className="text-red-400">*</span>
                   </label>
                   <textarea
                     name="description"
@@ -771,7 +789,7 @@ export default function ListPropertyPage() {
                 {/* Thumbnail */}
                 <div className="mb-8">
                   <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-4">
-                    Featured Thumbnail (Main Image)
+                    Featured Thumbnail (Main Image) 
                   </label>
                   <button
                     type="button"
@@ -961,7 +979,7 @@ export default function ListPropertyPage() {
 
                 <div className="mb-6">
                   <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">
-                    Street Address
+                    Street Address <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -976,7 +994,7 @@ export default function ListPropertyPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">
-                      City / Municipality
+                      City / Municipality <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
@@ -989,7 +1007,7 @@ export default function ListPropertyPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">
-                      Province / Region
+                      Province / Region <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
@@ -1002,7 +1020,7 @@ export default function ListPropertyPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">
-                      Postal Code
+                      Postal Code <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
@@ -1044,11 +1062,10 @@ export default function ListPropertyPage() {
                         key={feature}
                         type="button"
                         onClick={() => handleFeatureToggle(feature)}
-                        className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                          formData.features.includes(feature)
+                        className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${formData.features.includes(feature)
                             ? "border-orange-500 bg-orange-600/20 text-white"
                             : "border-white/10 bg-white/5 text-white/60 hover:border-white/20"
-                        }`}
+                          }`}
                       >
                         {feature}
                       </button>
@@ -1080,11 +1097,10 @@ export default function ListPropertyPage() {
                         key={name}
                         type="button"
                         onClick={() => handleAmenityToggle(name)}
-                        className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                          formData.amenities.includes(name)
+                        className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${formData.amenities.includes(name)
                             ? "border-orange-500 bg-orange-600/20 text-white"
                             : "border-white/10 bg-white/5 text-white/60 hover:border-white/20"
-                        }`}
+                          }`}
                       >
                         {name}
                       </button>
@@ -1195,11 +1211,10 @@ export default function ListPropertyPage() {
                 type="button"
                 onClick={() => setActiveSection(Math.max(0, activeSection - 1))}
                 disabled={activeSection === 0 || loading}
-                className={`px-8 py-4 rounded-2xl font-bold transition-all ${
-                  activeSection === 0 || loading
+                className={`px-8 py-4 rounded-2xl font-bold transition-all ${activeSection === 0 || loading
                     ? "text-white/30 cursor-not-allowed"
                     : "text-white hover:bg-white/10"
-                }`}
+                  }`}
               >
                 ← Previous
               </button>

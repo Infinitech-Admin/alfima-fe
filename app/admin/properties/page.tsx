@@ -104,7 +104,14 @@ interface Property {
   description: string;
   listing_type: "sale" | "rent";
   property_type: string;
-  status: "active" | "sold" | "rented" | "inactive" | "pending" | "rejected";
+  status:
+  | "active"
+  | "sold"
+  | "rented"
+  | "inactive"
+  | "pending"
+  | "rejected"
+  | "draft";
   price: number | null;
   price_per_month: number | null;
   tags?: PropertyTag[];
@@ -434,55 +441,55 @@ const TAG_COLOR_OPTIONS: {
   classes: string;
   dot: string;
 }[] = [
-  {
-    value: "red",
-    label: "Red",
-    classes: "bg-red-100 text-red-700 border-red-300",
-    dot: "bg-red-500",
-  },
-  {
-    value: "blue",
-    label: "Blue",
-    classes: "bg-blue-100 text-blue-700 border-blue-300",
-    dot: "bg-blue-500",
-  },
-  {
-    value: "emerald",
-    label: "Green",
-    classes: "bg-emerald-100 text-emerald-700 border-emerald-300",
-    dot: "bg-emerald-500",
-  },
-  {
-    value: "amber",
-    label: "Amber",
-    classes: "bg-amber-100 text-amber-700 border-amber-300",
-    dot: "bg-amber-500",
-  },
-  {
-    value: "violet",
-    label: "Violet",
-    classes: "bg-violet-100 text-violet-700 border-violet-300",
-    dot: "bg-violet-500",
-  },
-  {
-    value: "pink",
-    label: "Pink",
-    classes: "bg-pink-100 text-pink-700 border-pink-300",
-    dot: "bg-pink-500",
-  },
-  {
-    value: "orange",
-    label: "Orange",
-    classes: "bg-orange-100 text-orange-700 border-orange-300",
-    dot: "bg-orange-500",
-  },
-  {
-    value: "slate",
-    label: "Slate",
-    classes: "bg-slate-200 text-slate-700 border-slate-300",
-    dot: "bg-slate-500",
-  },
-];
+    {
+      value: "red",
+      label: "Red",
+      classes: "bg-red-100 text-red-700 border-red-300",
+      dot: "bg-red-500",
+    },
+    {
+      value: "blue",
+      label: "Blue",
+      classes: "bg-blue-100 text-blue-700 border-blue-300",
+      dot: "bg-blue-500",
+    },
+    {
+      value: "emerald",
+      label: "Green",
+      classes: "bg-emerald-100 text-emerald-700 border-emerald-300",
+      dot: "bg-emerald-500",
+    },
+    {
+      value: "amber",
+      label: "Amber",
+      classes: "bg-amber-100 text-amber-700 border-amber-300",
+      dot: "bg-amber-500",
+    },
+    {
+      value: "violet",
+      label: "Violet",
+      classes: "bg-violet-100 text-violet-700 border-violet-300",
+      dot: "bg-violet-500",
+    },
+    {
+      value: "pink",
+      label: "Pink",
+      classes: "bg-pink-100 text-pink-700 border-pink-300",
+      dot: "bg-pink-500",
+    },
+    {
+      value: "orange",
+      label: "Orange",
+      classes: "bg-orange-100 text-orange-700 border-orange-300",
+      dot: "bg-orange-500",
+    },
+    {
+      value: "slate",
+      label: "Slate",
+      classes: "bg-slate-200 text-slate-700 border-slate-300",
+      dot: "bg-slate-500",
+    },
+  ];
 
 function getTagColorClasses(color?: string): string {
   return (
@@ -605,7 +612,7 @@ function normalizeArray(val: unknown): any[] {
       try {
         const parsed = JSON.parse(trimmed);
         return Array.isArray(parsed) ? parsed : [parsed];
-      } catch {}
+      } catch { }
     }
     return trimmed
       .split(",")
@@ -725,11 +732,10 @@ function ExistingTagsPicker({
         return (
           <span
             key={`${t.label}-${i}`}
-            className={`group flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all ${
-              isSelected
-                ? getTagColorClasses(t.color)
-                : "bg-white border-slate-200 text-slate-500 hover:border-slate-400"
-            }`}
+            className={`group flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all ${isSelected
+              ? getTagColorClasses(t.color)
+              : "bg-white border-slate-200 text-slate-500 hover:border-slate-400"
+              }`}
           >
             <button
               type="button"
@@ -825,10 +831,10 @@ function PropertyFormModal({
   const [tags, setTags] = useState<PropertyTag[]>(() =>
     initial?.tags
       ? initial.tags.map((t) => ({
-          label: t.label ?? "",
-          color: t.color ?? "red",
-          active: t.active ?? true,
-        }))
+        label: t.label ?? "",
+        color: t.color ?? "red",
+        active: t.active ?? true,
+      }))
       : [],
   );
 
@@ -978,8 +984,8 @@ function PropertyFormModal({
         const errorData = await res.json().catch(() => ({}));
         throw new Error(
           errorData.error ??
-            errorData.message ??
-            `Failed to delete photo (${res.status})`,
+          errorData.message ??
+          `Failed to delete photo (${res.status})`,
         );
       }
     } catch (err: any) {
@@ -988,7 +994,7 @@ function PropertyFormModal({
       setUnitOffering((prev) => ({ ...prev, existingPhotos: snapshot }));
       setError(
         err.message ||
-          "Failed to delete unit offering photo. Please try again.",
+        "Failed to delete unit offering photo. Please try again.",
       );
     } finally {
       setDeletingUnitOfferingPhoto(null);
@@ -1168,10 +1174,10 @@ function PropertyFormModal({
         setTags(
           full.tags && full.tags.length > 0
             ? full.tags.map((t) => ({
-                label: t.label ?? "",
-                color: t.color ?? "red",
-                active: t.active ?? true,
-              }))
+              label: t.label ?? "",
+              color: t.color ?? "red",
+              active: t.active ?? true,
+            }))
             : [],
         );
         setUnitOffering(
@@ -1440,10 +1446,10 @@ function PropertyFormModal({
 
       const unitOfferingsPayload = hasUnitOffering
         ? [
-            {
-              ...(unitOffering.serverId ? { id: unitOffering.serverId } : {}),
-            },
-          ]
+          {
+            ...(unitOffering.serverId ? { id: unitOffering.serverId } : {}),
+          },
+        ]
         : [];
 
       if (unitOfferingsPayload.length > 0) {
@@ -1508,10 +1514,10 @@ function PropertyFormModal({
                 xhr.status >= 200 && xhr.status < 300
                   ? resolve()
                   : reject(
-                      new Error(
-                        `Unit offer photo upload failed for ${category} (${xhr.status})`,
-                      ),
+                    new Error(
+                      `Unit offer photo upload failed for ${category} (${xhr.status})`,
                     ),
+                  ),
               );
               xhr.addEventListener("error", () =>
                 reject(
@@ -1642,7 +1648,7 @@ function PropertyFormModal({
                   reject(
                     new Error(
                       errorData.error ||
-                        `Upload failed with status ${xhr.status}`,
+                      `Upload failed with status ${xhr.status}`,
                     ),
                   );
                 } catch {
@@ -1728,24 +1734,54 @@ function PropertyFormModal({
           className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
           style={{ animation: "modalIn 0.35s cubic-bezier(0.34,1.56,0.64,1)" }}
         >
+
           {/* Header */}
-          <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 flex-shrink-0">
-            <div>
+          <div className="flex flex-shrink-0 items-start justify-between gap-4 border-b border-slate-100 px-6 py-5 sm:px-8">
+            {/* Title and Description */}
+            <div className="min-w-0 flex-1">
               <h2 className="text-xl font-bold text-slate-800">
                 {mode === "create" ? "Add New Property" : "Edit Property"}
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="mt-1 text-sm text-slate-400">
                 {mode === "create"
                   ? "Fill in the details to list a new property."
                   : "Update the property information below."}
               </p>
             </div>
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
-            >
-              <X className="w-5 h-5 text-slate-500" />
-            </button>
+
+            {/* Status and Close Button */}
+            <div className="flex flex-shrink-0 items-start gap-3">
+              <div className="flex flex-row items-center justify-center gap-2">
+                <label className={`${lbl} mb-0 text-center`}>
+                  Status
+                </label>
+
+                <select
+                  className={sel}
+                  value={form.status}
+                  onChange={(e) => setF("status", e.target.value)}
+                >
+                  {(mode === "create"
+                    ? ["active", "draft"]
+                    : ["active", "sold", "rented", "inactive", "draft"]
+                  ).map((s) => (
+                    <option key={s} value={s}>
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close modal"
+                className="mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-slate-100 transition-colors hover:bg-slate-200"
+              >
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
           </div>
 
           {/* Body */}
@@ -1770,13 +1806,12 @@ function PropertyFormModal({
                         key={t}
                         type="button"
                         onClick={() => setF("listing_type", t)}
-                        className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all border ${
-                          form.listing_type === t
-                            ? t === "sale"
-                              ? "bg-red-600 border-red-600 text-white shadow-md shadow-red-200"
-                              : "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200"
-                            : "bg-white border-slate-200 text-slate-500 hover:border-slate-400"
-                        }`}
+                        className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all border ${form.listing_type === t
+                          ? t === "sale"
+                            ? "bg-red-600 border-red-600 text-white shadow-md shadow-red-200"
+                            : "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200"
+                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-400"
+                          }`}
                       >
                         {t === "sale" ? "🏷 For Sale" : "🔑 For Rent"}
                       </button>
@@ -1963,11 +1998,10 @@ function PropertyFormModal({
                                   : [...prev, f.value],
                               )
                             }
-                            className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${
-                              isActive
-                                ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200"
-                                : "bg-white border-slate-200 text-slate-600 hover:border-slate-400"
-                            }`}
+                            className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all border ${isActive
+                              ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200"
+                              : "bg-white border-slate-200 text-slate-600 hover:border-slate-400"
+                              }`}
                           >
                             {f.label}
                           </button>
@@ -2020,11 +2054,10 @@ function PropertyFormModal({
                           setF("developer", "");
                         }
                       }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                        developerEnabled
-                          ? "bg-emerald-100 border-emerald-300 text-emerald-700"
-                          : "bg-slate-100 border-slate-300 text-slate-600 hover:border-slate-400"
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${developerEnabled
+                        ? "bg-emerald-100 border-emerald-300 text-emerald-700"
+                        : "bg-slate-100 border-slate-300 text-slate-600 hover:border-slate-400"
+                        }`}
                     >
                       {developerEnabled ? "✓ Enabled" : "Disabled"}
                     </button>
@@ -2036,22 +2069,20 @@ function PropertyFormModal({
                         <button
                           type="button"
                           onClick={() => setDeveloperMode("predefined")}
-                          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all border ${
-                            developerMode === "predefined"
-                              ? "bg-blue-600 border-blue-600 text-white"
-                              : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400"
-                          }`}
+                          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all border ${developerMode === "predefined"
+                            ? "bg-blue-600 border-blue-600 text-white"
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400"
+                            }`}
                         >
                           Select from List
                         </button>
                         <button
                           type="button"
                           onClick={() => setDeveloperMode("custom")}
-                          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all border ${
-                            developerMode === "custom"
-                              ? "bg-blue-600 border-blue-600 text-white"
-                              : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400"
-                          }`}
+                          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all border ${developerMode === "custom"
+                            ? "bg-blue-600 border-blue-600 text-white"
+                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400"
+                            }`}
                         >
                           Enter Custom
                         </button>
@@ -2065,12 +2096,11 @@ function PropertyFormModal({
                                 key={dev}
                                 type="button"
                                 onClick={() => setF("developer", dev)}
-                                className={`w-full px-3 py-2.5 rounded-lg text-sm font-medium border transition-all text-left ${
-                                  normalizeLabel(form.developer) ===
+                                className={`w-full px-3 py-2.5 rounded-lg text-sm font-medium border transition-all text-left ${normalizeLabel(form.developer) ===
                                   normalizeLabel(dev)
-                                    ? "bg-blue-600 border-blue-600 text-white"
-                                    : "bg-slate-50 border-slate-200 text-slate-700 hover:border-blue-400"
-                                }`}
+                                  ? "bg-blue-600 border-blue-600 text-white"
+                                  : "bg-slate-50 border-slate-200 text-slate-700 hover:border-blue-400"
+                                  }`}
                               >
                                 {dev}
                               </button>
@@ -2296,24 +2326,6 @@ function PropertyFormModal({
                   )}
                 </div>
 
-                {/* Status (edit only) */}
-                {mode === "edit" && (
-                  <div>
-                    <label className={lbl}>Status</label>
-                    <select
-                      className={sel}
-                      value={form.status}
-                      onChange={(e) => setF("status", e.target.value)}
-                    >
-                      {["active", "sold", "rented", "inactive"].map((s) => (
-                        <option key={s} value={s}>
-                          {s.charAt(0).toUpperCase() + s.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
                 {/* Video Upload */}
                 <div>
                   <label className={lbl}>
@@ -2460,11 +2472,10 @@ function PropertyFormModal({
                         key={t}
                         type="button"
                         onClick={() => setF("property_type", t)}
-                        className={`py-2.5 px-3 rounded-xl text-sm font-medium capitalize transition-all border ${
-                          form.property_type === t
-                            ? "bg-slate-800 border-slate-800 text-white"
-                            : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400"
-                        }`}
+                        className={`py-2.5 px-3 rounded-xl text-sm font-medium capitalize transition-all border ${form.property_type === t
+                          ? "bg-slate-800 border-slate-800 text-white"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400"
+                          }`}
                       >
                         {t}
                       </button>
@@ -2589,12 +2600,11 @@ function PropertyFormModal({
                     </label>
 
                     <span
-                      className={`text-[10px] font-bold ${
-                        countUnitOfferingPhotos(unitOffering) >=
+                      className={`text-[10px] font-bold ${countUnitOfferingPhotos(unitOffering) >=
                         MAX_UNIT_OFFERING_PHOTOS
-                          ? "text-red-500"
-                          : "text-slate-400"
-                      }`}
+                        ? "text-red-500"
+                        : "text-slate-400"
+                        }`}
                     >
                       {countUnitOfferingPhotos(unitOffering)}/
                       {MAX_UNIT_OFFERING_PHOTOS}
@@ -2640,12 +2650,11 @@ function PropertyFormModal({
                 bg-slate-50
                 text-center
                 group
-                ${
-                  countUnitOfferingPhotos(unitOffering) >=
-                  MAX_UNIT_OFFERING_PHOTOS
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }
+                ${countUnitOfferingPhotos(unitOffering) >=
+                                MAX_UNIT_OFFERING_PHOTOS
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                              }
               `}
                           >
                             <Upload
@@ -3125,17 +3134,17 @@ function ViewModal({
   const units = property.unit_offerings?.length
     ? normalizeUnitOfferings(property.unit_offerings)
     : property.bedrooms ||
-        property.bathrooms ||
-        property.area ||
-        property.yearBuilt
+      property.bathrooms ||
+      property.area ||
+      property.yearBuilt
       ? normalizeUnitOfferings([
-          {
-            bedrooms: property.bedrooms,
-            bathrooms: property.bathrooms,
-            area: property.area,
-            year_built: property.yearBuilt,
-          },
-        ])
+        {
+          bedrooms: property.bedrooms,
+          bathrooms: property.bathrooms,
+          area: property.area,
+          year_built: property.yearBuilt,
+        },
+      ])
       : [];
 
   const unitPhotos = mapUnitOfferImagesToPhotos(property.unit_offer_images);
@@ -3286,20 +3295,18 @@ function ViewModal({
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${
-                      isActive
-                        ? "border-red-600 text-red-600"
-                        : "border-transparent text-slate-400 hover:text-slate-600"
-                    }`}
+                    className={`px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${isActive
+                      ? "border-red-600 text-red-600"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
+                      }`}
                   >
                     {tab.label}
                     {tab.count !== undefined && (
                       <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                          isActive
-                            ? "bg-red-100 text-red-600"
-                            : "bg-slate-100 text-slate-400"
-                        }`}
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isActive
+                          ? "bg-red-100 text-red-600"
+                          : "bg-slate-100 text-slate-400"
+                          }`}
                       >
                         {tab.count}
                       </span>
@@ -3609,19 +3616,17 @@ function ViewModal({
                                       onClick={() =>
                                         setUnitPhotoCategory(cat.key)
                                       }
-                                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                                        isActive
-                                          ? "bg-red-600 border-red-600 text-white"
-                                          : "bg-white border-slate-200 text-slate-500 hover:border-slate-400"
-                                      }`}
+                                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${isActive
+                                        ? "bg-red-600 border-red-600 text-white"
+                                        : "bg-white border-slate-200 text-slate-500 hover:border-slate-400"
+                                        }`}
                                     >
                                       {cat.label}
                                       <span
-                                        className={`ml-1.5 text-[10px] ${
-                                          isActive
-                                            ? "text-red-100"
-                                            : "text-slate-400"
-                                        }`}
+                                        className={`ml-1.5 text-[10px] ${isActive
+                                          ? "text-red-100"
+                                          : "text-slate-400"
+                                          }`}
                                       >
                                         {unitPhotoCategoryCounts[cat.key]}
                                       </span>
@@ -3833,6 +3838,10 @@ export default function AdminPropertiesPage() {
       dot: "bg-amber-500",
       badge: "bg-amber-50 text-amber-700 border-amber-200",
     },
+    draft: {
+      dot: "bg-slate-500",
+      badge: "bg-slate-100 text-slate-700 border-slate-300",
+    },
     rejected: {
       dot: "bg-red-500",
       badge: "bg-red-50 text-red-700 border-red-200",
@@ -3937,6 +3946,7 @@ export default function AdminPropertiesPage() {
             >
               <option value="">All Status</option>
               <option value="active">Active</option>
+              <option value="draft">Draft</option>
               <option value="pending">Pending</option>
               <option value="inactive">Inactive</option>
               <option value="sold">Sold</option>
@@ -4084,11 +4094,10 @@ export default function AdminPropertiesPage() {
 
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span
-                                className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 ${
-                                  p.listing_type === "rent"
-                                    ? "bg-blue-50 text-blue-600"
-                                    : "bg-red-50 text-red-600"
-                                }`}
+                                className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0 ${p.listing_type === "rent"
+                                  ? "bg-blue-50 text-blue-600"
+                                  : "bg-red-50 text-red-600"
+                                  }`}
                               >
                                 {getListingTypeLabel(p.listing_type)}
                               </span>
@@ -4096,22 +4105,22 @@ export default function AdminPropertiesPage() {
                               {(p.tags ?? []).some(
                                 (t) => (t.active ?? true) && t.label?.trim(),
                               ) && (
-                                <div className="mb-1 flex flex-wrap gap-1">
-                                  {(p.tags ?? [])
-                                    .filter(
-                                      (t) =>
-                                        (t.active ?? true) && t.label?.trim(),
-                                    )
-                                    .map((t, i) => (
-                                      <span
-                                        key={i}
-                                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold border inline-block whitespace-nowrap ${getTagColorClasses(t.color)}`}
-                                      >
-                                        {t.label}
-                                      </span>
-                                    ))}
-                                </div>
-                              )}
+                                  <div className="mb-1 flex flex-wrap gap-1">
+                                    {(p.tags ?? [])
+                                      .filter(
+                                        (t) =>
+                                          (t.active ?? true) && t.label?.trim(),
+                                      )
+                                      .map((t, i) => (
+                                        <span
+                                          key={i}
+                                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold border inline-block whitespace-nowrap ${getTagColorClasses(t.color)}`}
+                                        >
+                                          {t.label}
+                                        </span>
+                                      ))}
+                                  </div>
+                                )}
                             </div>
 
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -4271,11 +4280,10 @@ export default function AdminPropertiesPage() {
                       <button
                         key={n}
                         onClick={() => setPage(n)}
-                        className={`w-9 h-9 rounded-xl border text-sm font-bold transition-all shadow-sm ${
-                          n === page
-                            ? "bg-red-600 border-red-600 text-white shadow-red-200"
-                            : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                        }`}
+                        className={`w-9 h-9 rounded-xl border text-sm font-bold transition-all shadow-sm ${n === page
+                          ? "bg-red-600 border-red-600 text-white shadow-red-200"
+                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
                       >
                         {n}
                       </button>
