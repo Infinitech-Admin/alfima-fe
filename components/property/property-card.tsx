@@ -37,6 +37,9 @@ const API_BASE = (
   process.env.NEXT_PUBLIC_API_IMG ?? "http://localhost:8000"
 ).replace(/\/$/, "");
 
+// Roles that should not see the agent block on a card.
+const HIDE_AGENT_ROLES = ["admin", "management"];
+
 // ── Tag colors — mirrors developer-property-card.tsx / the admin
 // PropertyFormModal's TAG_COLOR_OPTIONS, so developer listings and regular
 // listings render tags identically instead of developer cards silently
@@ -131,6 +134,11 @@ export function PropertyCard({
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [favoriteLoaded, setFavoriteLoaded] = useState(false);
   const { user } = useAuth();
+
+  const userRole = String((user as any)?.role ?? "")
+    .trim()
+    .toLowerCase();
+  const hideAgent = HIDE_AGENT_ROLES.includes(userRole);
 
   const source: FavoriteSource = normalizeSource(
     (property as any)._source ?? (property as any).source ?? "property",
@@ -439,8 +447,8 @@ export function PropertyCard({
             )}
           </div> */}
 
-          {/* Agent */}
-          {property.agent && (
+          {/* Agent — hidden for admin / management roles */}
+          {property.agent && !hideAgent && (
             <div className="mt-auto flex items-center gap-2 pt-3 border-t border-white/20">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
