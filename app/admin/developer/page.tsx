@@ -349,6 +349,7 @@ const OFFICE_INTERNET_OPTIONS = [
 ];
 
 const COMMERCIAL_TYPES = [
+  { value: "commercial_lot", label: "Commercial Lot" },
   { value: "retail_unit", label: "Retail Unit" },
   { value: "restaurant_fnb", label: "Restaurant / F&B" },
   { value: "boutique", label: "Boutique / Showroom" },
@@ -1161,6 +1162,7 @@ function PropertyFormModal({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStage, setUploadStage] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showMapLinkHelp, setShowMapLinkHelp] = useState(false);
 
   // ── Fetch-full-details-on-edit state ──
   // The list row (`initial`) comes from Laravel's index() endpoint, which
@@ -2984,10 +2986,20 @@ function PropertyFormModal({
 
                 {/* Visibility Map */}
                 <div>
-                  <label className={lbl}>Visibility Map</label>
+                  <div className="flex items-center justify-between gap-3">
+                    <label className={lbl}>Visibility Map</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowMapLinkHelp(true)}
+                      className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                    >
+                      How to get the link?
+                    </button>
+                  </div>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
+                      type="url"
                       className={`${inp} pl-9`}
                       value={form.visibility_map}
                       onChange={(e) => setF("visibility_map", e.target.value)}
@@ -3133,6 +3145,62 @@ function PropertyFormModal({
           </div>
         </div>
       </div>
+      {showMapLinkHelp && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
+            onClick={() => setShowMapLinkHelp(false)}
+          />
+          <div className="fixed inset-0 z-[210] flex items-center justify-center p-4">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="developer-map-link-help-title"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6"
+            >
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h3
+                    id="developer-map-link-help-title"
+                    className="text-lg font-bold text-slate-800"
+                  >
+                    Get the map URL from Google Maps
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Add a location map to this property listing.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close instructions"
+                  onClick={() => setShowMapLinkHelp(false)}
+                  className="p-1 text-slate-400 hover:text-slate-700 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-slate-600">
+                <li>Open Google Maps and find the property location.</li>
+                <li>Choose Share, then select Embed a map.</li>
+                <li>
+                  Copy the HTML and find the URL inside the iframe&apos;s{" "}
+                  <code className="text-blue-700">src=&quot;...&quot;</code>.
+                </li>
+                <li>Paste that URL into the Visibility Map field, not the full HTML code.</li>
+              </ol>
+              <div className="flex justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowMapLinkHelp(false)}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

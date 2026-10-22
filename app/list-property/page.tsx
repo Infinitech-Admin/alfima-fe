@@ -140,6 +140,7 @@ export default function ListPropertyPage() {
     yearBuilt: "",
     address: "",
     city: "",
+    visibilityMap: "",
     state: "",
     zipCode: "",
     amenities: [] as string[],
@@ -160,6 +161,7 @@ export default function ListPropertyPage() {
   const [uploadStep, setUploadStep] = useState("");
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoTotalChunks, setVideoTotalChunks] = useState(0);
+  const [showMapLinkHelp, setShowMapLinkHelp] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
@@ -257,6 +259,14 @@ export default function ListPropertyPage() {
     if (!formData.city.trim()) e.push("City / Municipality is required.");
     if (!formData.state.trim()) e.push("Province / Region is required.");
     if (!formData.zipCode.trim()) e.push("Postal code is required.");
+    if (
+      formData.visibilityMap.trim() &&
+      !/^https:\/\/(www\.google\.com\/maps(\/embed)?|maps\.app\.goo\.gl)\/.+$/.test(
+        formData.visibilityMap.trim(),
+      )
+    ) {
+      e.push("Enter a valid Google Maps link.");
+    }
     // if (!formData.bedrooms.trim()) e.push("Number of bedrooms is required.");
     // if (!formData.bathrooms.trim()) e.push("Number of bathrooms is required.");
     // if (!formData.area.trim()) e.push("Floor area is required.");
@@ -298,6 +308,9 @@ export default function ListPropertyPage() {
       fd.append("property_type", formData.propertyType);
       fd.append("address", formData.address.trim());
       fd.append("city", formData.city.trim());
+      if (formData.visibilityMap.trim()) {
+        fd.append("visibility_map", formData.visibilityMap.trim());
+      }
       fd.append("state", formData.state.trim());
       fd.append("zip_code", formData.zipCode.trim());
       fd.append("bedrooms", formData.bedrooms);
@@ -436,6 +449,7 @@ export default function ListPropertyPage() {
         yearBuilt: "",
         address: "",
         city: "",
+        visibilityMap: "",
         state: "",
         zipCode: "",
         amenities: [],
@@ -1032,6 +1046,37 @@ export default function ListPropertyPage() {
                     />
                   </div>
                 </div>
+
+                <div className="mt-6">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <label
+                      htmlFor="visibilityMap"
+                      className="block text-xs font-semibold text-white/50 uppercase tracking-widest"
+                    >
+                      Google Maps Link
+                    </label>
+                    <button
+                      type="button"
+                      aria-haspopup="dialog"
+                      onClick={() => setShowMapLinkHelp(true)}
+                      className="text-xs font-medium text-orange-400 hover:text-orange-300 transition-colors"
+                    >
+                      How to get the link?
+                    </button>
+                  </div>
+                  <input
+                    type="url"
+                    id="visibilityMap"
+                    name="visibilityMap"
+                    value={formData.visibilityMap}
+                    onChange={handleChange}
+                    placeholder="Paste the Google Maps embed URL"
+                    className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:border-orange-500/50 transition-all"
+                  />
+                  <p className="text-white/35 text-xs mt-2">
+                    Optional — paste the URL from the Google Maps embed code.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -1255,6 +1300,62 @@ export default function ListPropertyPage() {
           </div>
         </div>
       </div>
+      {showMapLinkHelp && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200]"
+            onClick={() => setShowMapLinkHelp(false)}
+          />
+          <div className="fixed inset-0 z-[210] flex items-center justify-center p-4">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="agent-map-link-help-title"
+              className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 text-white shadow-2xl"
+            >
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h3
+                    id="agent-map-link-help-title"
+                    className="text-lg font-bold"
+                  >
+                    Get the map URL from Google Maps
+                  </h3>
+                  <p className="text-sm text-white/50 mt-1">
+                    Add a location map to your property listing.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close instructions"
+                  onClick={() => setShowMapLinkHelp(false)}
+                  className="p-1 text-white/50 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-white/70">
+                <li>Open Google Maps and find the property location.</li>
+                <li>Choose Share, then select Embed a map.</li>
+                <li>
+                  Copy the HTML and find the URL inside the iframe&apos;s{" "}
+                  <code className="text-orange-300">src=&quot;...&quot;</code>.
+                </li>
+                <li>Paste that URL here, not the full HTML code.</li>
+              </ol>
+              <div className="flex justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowMapLinkHelp(false)}
+                  className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-sm font-semibold transition-colors"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
-  );
+    );
 }

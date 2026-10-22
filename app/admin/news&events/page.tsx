@@ -28,9 +28,8 @@ const IMAGE_BASE = (
 // ─── Adjust these to match your actual Laravel routes ───────────────────────
 const NEWS_API = "/api/admin/news-events/articles";
 const EVENTS_API = "/api/admin/news-events/events";
-// Replace the two size constants with one pair:
-const MAX_IMAGE_BYTES = 30 * 1024 * 1024;        // largest file a user may pick
-const MAX_UPLOAD_IMAGE_SIZE = 5 * 1024 * 1024;   // compress anything above this
+const MAX_IMAGE_BYTES = 100 * 1024 * 1024;
+const IMAGE_CHUNK_SIZE = 2 * 1024 * 1024;
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
@@ -107,7 +106,7 @@ async function apiFetch(url: string, opts?: RequestInit) {
   if (!res.ok) {
     if (res.status === 413) {
       throw new Error(
-        "The upload is too large for the server. Try removing the image or shortening the text.",
+        "The request is too large for the server. Please try a smaller image or shorten the text.",
       );
     }
     const errors = data?.errors
@@ -122,65 +121,7 @@ async function apiFetch(url: string, opts?: RequestInit) {
   return data;
 }
 
-async function compressImage(file: File): Promise<File> {
-  if (file.size <= MAX_UPLOAD_IMAGE_SIZE) return file;
-
-  let bitmap: ImageBitmap;
-  try {
-    bitmap = await createImageBitmap(file);
-  } catch {
-    throw new Error("This image could not be processed. Please choose another.");
-  }
-
-  try {
-    const scale = Math.min(1, 1920 / Math.max(bitmap.width, bitmap.height));
-    let width = Math.round(bitmap.width * scale);
-    let height = Math.round(bitmap.height * scale);
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("Image compression is not supported.");
-
-    while (Math.max(width, height) >= 320) {
-      canvas.width = width;
-      canvas.height = height;
-      context.clearRect(0, 0, width, height);
-      context.drawImage(bitmap, 0, 0, width, height);
-
-      for (const quality of [0.82, 0.7, 0.58]) {
-        const blob = await new Promise<Blob | null>((resolve) =>
-          canvas.toBlob(resolve, "image/webp", quality),
-        );
-        if (!blob) throw new Error("This image could not be compressed.");
-
-        if (blob.size <= MAX_UPLOAD_IMAGE_SIZE) {
-          const baseName = file.name.replace(/\.[^.]+$/, "");
-          const extension =
-            blob.type === "image/webp"
-              ? "webp"
-              : blob.type === "image/jpeg"
-                ? "jpg"
-                : "png";
-          return new File([blob], `${baseName}.${extension}`, {
-            type: blob.type,
-            lastModified: file.lastModified,
-          });
-        }
-      }
-
-      width = Math.round(width * 0.8);
-      height = Math.round(height * 0.8);
-    }
-  } finally {
-    bitmap.close();
-  }
-
-  throw new Error(
-    "This image is too large to compress. Please choose a smaller image.",
-  );
-}
-
-// Builds multipart form data. Updates are sent as POST + _method=PUT
-// because PHP can't parse multipart bodies on native PUT requests.
+// Builds multipart form data; the Laravel update endpoints accept POST requests.
 async function saveItem<T extends { id?: number; _imageFile?: File | null }>(
   baseUrl: string,
   item: T,
@@ -189,16 +130,50 @@ async function saveItem<T extends { id?: number; _imageFile?: File | null }>(
 ) {
   const fd = new FormData();
   fields.forEach((k) => {
-    let v: any = (item as any)[k];
-    if (v === undefined || v === null) v = "";
-    if (typeof v === "boolean") v = v ? "1" : "0";
-    fd.append(k, String(v));
+    let value: unknown = item[k as keyof T];
+    if (value === undefined || value === null) value = "";
+    if (typeof value === "boolean") value = value ? "1" : "0";
+    fd.append(k, String(value));
   });
-  if (item._imageFile) {
-    fd.append("image", await compressImage(item._imageFile));
-  }
 
   const url = isNew ? baseUrl : `${baseUrl}/${item.id}`;
+  if (item._imageFile && item._imageFile.size > IMAGE_CHUNK_SIZE) {
+    const file = item._imageFile;
+    const totalChunks = Math.ceil(file.size / IMAGE_CHUNK_SIZE);
+    const uploadId = crypto.randomUUID();
+
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      const chunkForm = new FormData();
+      chunkForm.append("kind", baseUrl === NEWS_API ? "article" : "event");
+      chunkForm.append("upload_id", uploadId);
+      chunkForm.append("chunk_index", String(chunkIndex));
+      chunkForm.append("total_chunks", String(totalChunks));
+      chunkForm.append("file_name", file.name);
+      if (!isNew) chunkForm.append("record_id", String(item.id));
+      if (chunkIndex === totalChunks - 1) {
+        fields.forEach((field) => chunkForm.append(field, fd.get(field) ?? ""));
+      }
+      chunkForm.append(
+        "chunk",
+        file.slice(
+          chunkIndex * IMAGE_CHUNK_SIZE,
+          Math.min((chunkIndex + 1) * IMAGE_CHUNK_SIZE, file.size),
+        ),
+        file.name,
+      );
+
+      const result = await apiFetch("/api/admin/news-events/upload-chunk", {
+        method: "POST",
+        body: chunkForm,
+      });
+      if (chunkIndex < totalChunks - 1 && result.received !== chunkIndex) {
+        throw new Error(`Image upload stopped at chunk ${chunkIndex + 1}.`);
+      }
+      if (chunkIndex === totalChunks - 1) return result;
+    }
+  }
+
+  if (item._imageFile) fd.append("image", item._imageFile);
   return apiFetch(url, { method: "POST", body: fd });
 }
 
@@ -223,11 +198,11 @@ function useImageFile() {
   const pick = (f: File | undefined, onError: (m: string | null) => void) => {
     if (!f) return;
     if (!ALLOWED_TYPES.includes(f.type)) {
-      onError("Use a JPG, PNG, WebP, GIF or AVIF image.");
+      onError("Use a JPG, PNG or WebP image.");
       return;
     }
     if (f.size > MAX_IMAGE_BYTES) {
-      onError("Image must be 50MB or smaller.");
+      onError("Image must be 100MB or smaller.");
       return;
     }
     onError(null);
@@ -361,7 +336,7 @@ function ImagePicker({
         />
       </div>
       <p className="text-slate-400 text-xs mt-2">
-        Images over 3 MB are compressed before upload.
+        Images up to 100 MB are supported. Files above 2 MB upload in small chunks.
       </p>
     </div>
   );

@@ -162,11 +162,11 @@ interface Toast {
 // Multi-select — an admin can choose any combination (none, one, two, or
 // all three) of these financing options for a property. Only relevant for
 // "For Sale" listings — rentals don't have financing options.
-const FINANCING_OPTIONS = [
-  { value: "in_house_financing", label: "In-House Financing" },
-  { value: "pag_ibig_financing", label: "PAG-IBIG Financing" },
-  { value: "bank_financing", label: "Bank Financing" },
-];
+// const FINANCING_OPTIONS = [
+//   { value: "in_house_financing", label: "In-House Financing" },
+//   { value: "pag_ibig_financing", label: "PAG-IBIG Financing" },
+//   { value: "bank_financing", label: "Bank Financing" },
+// ];
 
 const ACCEPT_ALL_IMAGES =
   "image/*,.avif,.heic,.heif,.jxl,.tiff,.tif,.bmp,.ico,.svg,.webp";
@@ -1108,6 +1108,7 @@ function PropertyFormModal({
     priority: initial?.priority ?? (null as number | null),
     developer: initial?.developer ?? "",
   });
+  const [showMapLinkHelp, setShowMapLinkHelp] = useState(false);
 
   useEffect(() => {
     if (mode !== "edit" || !initial?.id) return;
@@ -1972,7 +1973,7 @@ function PropertyFormModal({
                 </div>
 
                 {/* Financing Option — multi-select, "For Sale" listings only */}
-                {isSale && (
+                {/* {isSale && (
                   <div>
                     <label className={lbl}>
                       Financing Option
@@ -2012,7 +2013,7 @@ function PropertyFormModal({
                       Select all payment methods buyers can use.
                     </p>
                   </div>
-                )}
+                )} */}
 
                 {/* Priority */}
                 <div>
@@ -2511,14 +2512,25 @@ function PropertyFormModal({
                   </div>
                 </div>
                 <div>
-                  <label className={lbl}>Visibility Map *</label>
+                  <div className="flex items-center justify-between gap-3">
+                    <label className={lbl}>Visibility Map *</label>
+                    <button
+                      type="button"
+                      aria-haspopup="dialog"
+                      onClick={() => setShowMapLinkHelp(true)}
+                      className="text-xs font-medium text-orange-600 hover:text-orange-700 transition-colors"
+                    >
+                      How to get the link?
+                    </button>
+                  </div>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
+                      type="url"
                       className={`${inp} pl-9`}
                       value={form.visibility_map}
                       onChange={(e) => setF("visibility_map", e.target.value)}
-                      placeholder="Google Maps URL, e.g. https://www.google.com/maps/embed?pb=..."
+                      placeholder="Google Maps embed URL, e.g. https://www.google.com/maps/embed?pb=..."
                     />
                   </div>
                 </div>
@@ -2934,6 +2946,62 @@ function PropertyFormModal({
           </div>
         </div>
       </div>
+      {showMapLinkHelp && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
+            onClick={() => setShowMapLinkHelp(false)}
+          />
+          <div className="fixed inset-0 z-[210] flex items-center justify-center p-4">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="admin-map-link-help-title"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6"
+            >
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h3
+                    id="admin-map-link-help-title"
+                    className="text-lg font-bold text-slate-800"
+                  >
+                    Get the map URL from Google Maps
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Add a location map to this property listing.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close instructions"
+                  onClick={() => setShowMapLinkHelp(false)}
+                  className="p-1 text-slate-400 hover:text-slate-700 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-slate-600">
+                <li>Open Google Maps and find the property location.</li>
+                <li>Choose Share, then select Embed a map.</li>
+                <li>
+                  Copy the HTML and find the URL inside the iframe&apos;s{" "}
+                  <code className="text-orange-700">src=&quot;...&quot;</code>.
+                </li>
+                <li>Paste that URL here, not the full HTML code.</li>
+              </ol>
+              <div className="flex justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowMapLinkHelp(false)}
+                  className="px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold transition-colors"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
@@ -3364,8 +3432,9 @@ function ViewModal({
                         </div>
                       ))}
                     </div>
+
                     {/* Financing Options — Sale listings only */}
-                    {financingOptions.length > 0 && (
+                    {/* {financingOptions.length > 0 && (
                       <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-100 mb-3">
                         <p className="text-xs text-slate-400 mb-2">
                           Financing Options
@@ -3382,7 +3451,7 @@ function ViewModal({
                           ))}
                         </div>
                       </div>
-                    )}
+                    )} */}
 
                     <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-100 mb-3">
                       <p className="text-xs text-slate-400 mb-1 flex items-center gap-1">
