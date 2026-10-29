@@ -478,13 +478,10 @@ function PropertyCard({
     ? FALLBACK_IMG
     : toAbsoluteUrl(property.thumbnail ?? property.images?.[0]?.url);
 
+  const agentAvatarUrl = toAbsoluteUrl(property.agent?.avatar);
   const agentLabel = property.agent
     ? getPropertyAgentLabel(property.agent.name)
     : "";
-  const agentAvatarUrl =
-    agentLabel === "Alfima"
-      ? "/alfima.png"
-      : toAbsoluteUrl(property.agent?.avatar);
 
   const listingType = property.listing_type ?? property.listingType;
   const isRent = listingType === "rent";

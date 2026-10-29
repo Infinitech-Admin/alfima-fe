@@ -4611,16 +4611,10 @@ export default function PropertyDetailsPage({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={
-                      isAlfimaListing
-                        ? "/alfima.png"
-                        : (listedAgent.avatar ??
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgent.name)}&size=128&background=random`)
+                      listedAgent.avatar ??
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgent.name)}&size=128&background=random`
                     }
-                    alt={
-                      isAlfimaListing
-                        ? "Alfima Realty Inc."
-                        : listedAgent.name
-                    }
+                    alt={listedAgent.name}
                     width={64}
                     height={64}
                     loading="lazy"
