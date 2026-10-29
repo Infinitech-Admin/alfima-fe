@@ -211,10 +211,13 @@ export function PropertyCard({
     setImageError(false);
   }, [resolvedImageUrl]);
 
-  const agentAvatarUrl = toAbsoluteUrl(property.agent?.avatar);
   const agentLabel = property.agent
     ? getPropertyAgentLabel(property.agent.name)
     : "";
+  const agentAvatarUrl =
+    agentLabel === "Alfima"
+      ? "/alfima.png"
+      : toAbsoluteUrl(property.agent?.avatar);
 
   const listingType = property.listing_type ?? property.listingType;
   const isRent = listingType === "rent";
@@ -517,7 +520,7 @@ export function PropertyCard({
                 }}
               />
               <p className="text-md font-semibold truncate text-white">
-                {agentLabel === "Alfima Realty Inc." ? agentLabel : `Agent: ${agentLabel}`}
+                {agentLabel === "Alfima" ? agentLabel : `Agent: ${agentLabel}`}
               </p>
             </div>
           )}
