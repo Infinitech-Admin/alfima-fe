@@ -517,7 +517,7 @@ export function PropertyCard({
                 }}
               />
               <p className="text-md font-semibold truncate text-white">
-                {agentLabel === "Alfima" ? agentLabel : `Agent: ${agentLabel}`}
+                {agentLabel === "Alfima Realty Inc." ? agentLabel : `Agent: ${agentLabel}`}
               </p>
             </div>
           )}
