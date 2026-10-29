@@ -468,7 +468,9 @@ export function PropertyCard({
               />
               <div className="flex-1 min-w-0">
                 <p className="text-md font-semibold text-white/90 line-clamp-1">
-                  Agent: {agentLabel}
+                  {agentLabel === "Alfima"
+                    ? agentLabel
+                    : `Agent: ${agentLabel}`}
                 </p>
               </div>
             </div>
