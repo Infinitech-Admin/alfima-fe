@@ -4,6 +4,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Property } from "@/lib/types";
+import { getPropertyAgentLabel } from "@/lib/property-agent-label";
 import { Heart, MapPin, Bed, Bath, Ruler } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/store";
@@ -154,6 +155,9 @@ export function PropertyCard({
     : toAbsoluteUrl(property.thumbnail ?? property.images?.[0]?.url);
 
   const agentAvatarUrl = toAbsoluteUrl(property.agent?.avatar);
+  const agentLabel = property.agent
+    ? getPropertyAgentLabel(property.agent.name)
+    : "";
 
   const listingType = property.listing_type ?? property.listingType;
   const isRent = listingType === "rent";
@@ -453,18 +457,18 @@ export function PropertyCard({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={agentAvatarUrl}
-                alt={property.agent.name}
+                alt={agentLabel}
                 width={32}
                 height={32}
                 className="rounded-full object-cover flex-shrink-0 ring-1 ring-white/30 w-8 h-8"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(property.agent!.name)}&size=32&background=random`;
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(agentLabel)}&size=32&background=random`;
                 }}
               />
               <div className="flex-1 min-w-0">
                 <p className="text-md font-semibold text-white/90 line-clamp-1">
-                  Agent: {property.agent.name}
+                  Agent: {agentLabel}
                 </p>
               </div>
             </div>

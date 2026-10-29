@@ -7,6 +7,7 @@ import Image from "next/image";
 import { createPortal } from "react-dom";
 import { useEffect, useState, use, useCallback } from "react";
 import { Property } from "@/lib/types";
+import { getPropertyAgentLabel } from "@/lib/property-agent-label";
 import { useAuth } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +50,7 @@ interface PropertySnapshot {
   bathrooms?: number | null;
   area?: string | null;
   agentId?: number | null;
+  agent?: Property["agent"];
   listing_type?: "sale" | "rent" | null;
 }
 
@@ -3333,6 +3335,11 @@ export default function PropertyDetailsPage({
     );
   }
 
+  const listedAgent = property.agent;
+  const listedAgentLabel = listedAgent
+    ? getPropertyAgentLabel(listedAgent.name)
+    : "";
+
   // ── Normalise tags ─────────────────────────────────────────────────────────
   const rawTags: any[] = (property as any)?.tags ?? [];
   const tags = rawTags
@@ -4597,38 +4604,38 @@ export default function PropertyDetailsPage({
             </div>
 
             {/* ── Agent card ── */}
-            {(property as any).agent && (
+            {listedAgent && (
               <div className="glass rounded-xl p-8">
                 <h3 className="font-bold text-lg mb-4">Listed by</h3>
                 <div className="flex items-start gap-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={
-                      (property as any).agent.avatar ??
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent((property as any).agent.name)}&size=128&background=random`
+                      listedAgent.avatar ??
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgentLabel)}&size=128&background=random`
                     }
-                    alt={(property as any).agent.name}
+                    alt={listedAgentLabel}
                     width={64}
                     height={64}
                     loading="lazy"
                     className="w-16 h-16 rounded-full object-cover flex-shrink-0"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent((property as any).agent.name)}&size=128&background=random`;
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgentLabel)}&size=128&background=random`;
                     }}
                   />
                   <div className="flex-1">
                     <h4 className="font-bold text-foreground">
-                      {(property as any).agent.name}
+                      {listedAgentLabel}
                     </h4>
-                    {(property as any).agent.specialization && (
+                    {listedAgent.specialization && (
                       <p className="text-xs text-muted-foreground mb-1">
-                        {(property as any).agent.specialization}
+                        {listedAgent.specialization}
                       </p>
                     )}
-                    {(property as any).agent.experience_years && (
+                    {listedAgent.experience_years && (
                       <p className="text-xs text-muted-foreground">
-                        {(property as any).agent.experience_years} years
+                        {listedAgent.experience_years} years
                         experience
                       </p>
                     )}

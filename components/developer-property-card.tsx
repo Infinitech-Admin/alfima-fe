@@ -4,6 +4,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Property } from "@/lib/types";
+import { getPropertyAgentLabel } from "@/lib/property-agent-label";
 import { MapPin, Bed, Bath, Heart, Ruler } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/store";
@@ -211,6 +212,9 @@ export function PropertyCard({
   }, [resolvedImageUrl]);
 
   const agentAvatarUrl = toAbsoluteUrl(property.agent?.avatar);
+  const agentLabel = property.agent
+    ? getPropertyAgentLabel(property.agent.name)
+    : "";
 
   const listingType = property.listing_type ?? property.listingType;
   const isRent = listingType === "rent";
@@ -505,15 +509,15 @@ export function PropertyCard({
             <div className="mt-auto flex items-center gap-2.5 pt-3 border-t border-white/20">
               <img
                 src={agentAvatarUrl}
-                alt={property.agent.name}
+                alt={agentLabel}
                 className="w-8 h-8 rounded-full object-cover ring-1 ring-white/30 flex-shrink-0"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(property.agent!.name)}`;
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(agentLabel)}`;
                 }}
               />
               <p className="text-md font-semibold truncate text-white">
-                Agent: {property.agent.name}
+                Agent: {agentLabel}
               </p>
             </div>
           )}

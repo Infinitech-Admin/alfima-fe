@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 
 import Image from "next/image";
+import { getPropertyAgentLabel } from "@/lib/property-agent-label";
 
 // ─── Achievement Catalog (single source of truth — same as dashboard) ─────────
 export const ACHIEVEMENT_CATALOG = [
@@ -478,6 +479,9 @@ function PropertyCard({
     : toAbsoluteUrl(property.thumbnail ?? property.images?.[0]?.url);
 
   const agentAvatarUrl = toAbsoluteUrl(property.agent?.avatar);
+  const agentLabel = property.agent
+    ? getPropertyAgentLabel(property.agent.name)
+    : "";
 
   const listingType = property.listing_type ?? property.listingType;
   const isRent = listingType === "rent";
@@ -573,17 +577,17 @@ function PropertyCard({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={agentAvatarUrl}
-                alt={property.agent.name}
+                alt={agentLabel}
                 width={20}
                 height={20}
                 className="rounded-full object-cover flex-shrink-0 ring-1 ring-white/30 w-5 h-5"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(property.agent!.name)}&size=20&background=random`;
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(agentLabel)}&size=20&background=random`;
                 }}
               />
               <p className="text-[10px] font-medium text-white/75 line-clamp-1">
-                {property.agent.name}
+                {agentLabel}
               </p>
             </div>
           )}
