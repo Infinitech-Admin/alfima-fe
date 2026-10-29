@@ -3336,9 +3336,9 @@ export default function PropertyDetailsPage({
   }
 
   const listedAgent = property.agent;
-  const listedAgentLabel = listedAgent
-    ? getPropertyAgentLabel(listedAgent.name)
-    : "";
+  const isAlfimaListing = listedAgent
+    ? getPropertyAgentLabel(listedAgent.name) === "Alfima"
+    : false;
 
   // ── Normalise tags ─────────────────────────────────────────────────────────
   const rawTags: any[] = (property as any)?.tags ?? [];
@@ -4612,21 +4612,26 @@ export default function PropertyDetailsPage({
                   <img
                     src={
                       listedAgent.avatar ??
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgentLabel)}&size=128&background=random`
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgent.name)}&size=128&background=random`
                     }
-                    alt={listedAgentLabel}
+                    alt={listedAgent.name}
                     width={64}
                     height={64}
                     loading="lazy"
                     className="w-16 h-16 rounded-full object-cover flex-shrink-0"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgentLabel)}&size=128&background=random`;
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgent.name)}&size=128&background=random`;
                     }}
                   />
                   <div className="flex-1">
+                    {isAlfimaListing && (
+                      <p className="text-sm font-semibold text-foreground">
+                        Alfima Realty Inc.
+                      </p>
+                    )}
                     <h4 className="font-bold text-foreground">
-                      {listedAgentLabel}
+                      {listedAgent.name}
                     </h4>
                     {listedAgent.specialization && (
                       <p className="text-xs text-muted-foreground mb-1">
