@@ -482,6 +482,10 @@ function PropertyCard({
   const agentLabel = property.agent
     ? getPropertyAgentLabel(property.agent.name)
     : "";
+  const displayAgentAvatarUrl =
+    agentLabel === "Alfima Realty Inc."
+      ? "/icons/alfima.png"
+      : agentAvatarUrl;
 
   const listingType = property.listing_type ?? property.listingType;
   const isRent = listingType === "rent";
@@ -576,7 +580,7 @@ function PropertyCard({
             <div className="mt-2 flex items-center gap-1.5 pt-2 border-t border-white/15">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={agentAvatarUrl}
+                src={displayAgentAvatarUrl}
                 alt={agentLabel}
                 width={20}
                 height={20}

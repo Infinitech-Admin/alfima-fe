@@ -215,6 +215,10 @@ export function PropertyCard({
   const agentLabel = property.agent
     ? getPropertyAgentLabel(property.agent.name)
     : "";
+  const displayAgentAvatarUrl =
+    agentLabel === "Alfima Realty Inc."
+      ? "/icons/alfima.png"
+      : agentAvatarUrl;
 
   const listingType = property.listing_type ?? property.listingType;
   const isRent = listingType === "rent";
@@ -508,7 +512,7 @@ export function PropertyCard({
           {property.agent && (
             <div className="mt-auto flex items-center gap-2.5 pt-3 border-t border-white/20">
               <img
-                src={agentAvatarUrl}
+                src={displayAgentAvatarUrl}
                 alt={agentLabel}
                 className="w-8 h-8 rounded-full object-cover ring-1 ring-white/30 flex-shrink-0"
                 onError={(e) => {

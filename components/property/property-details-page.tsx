@@ -3337,7 +3337,7 @@ export default function PropertyDetailsPage({
 
   const listedAgent = property.agent;
   const isAlfimaListing = listedAgent
-    ? getPropertyAgentLabel(listedAgent.name) === "Alfima"
+    ? getPropertyAgentLabel(listedAgent.name) === "Alfima Realty Inc."
     : false;
 
   // ── Normalise tags ─────────────────────────────────────────────────────────
@@ -4611,27 +4611,32 @@ export default function PropertyDetailsPage({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={
-                      listedAgent.avatar ??
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgent.name)}&size=128&background=random`
+                      isAlfimaListing
+                        ? "/icons/alfima.png"
+                        : (listedAgent.avatar ??
+                          `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgent.name)}&size=128&background=random`)
                     }
-                    alt={listedAgent.name}
+                    alt={
+                      isAlfimaListing
+                        ? "Alfima Realty Inc."
+                        : listedAgent.name
+                    }
                     width={64}
                     height={64}
                     loading="lazy"
                     className="w-16 h-16 rounded-full object-cover flex-shrink-0"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src =
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgent.name)}&size=128&background=random`;
+                        isAlfimaListing
+                          ? "/icons/alfima.png"
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(listedAgent.name)}&size=128&background=random`;
                     }}
                   />
                   <div className="flex-1">
-                    {isAlfimaListing && (
-                      <p className="text-sm font-semibold text-foreground">
-                        Alfima Realty Inc.
-                      </p>
-                    )}
                     <h4 className="font-bold text-foreground">
-                      {listedAgent.name}
+                      {isAlfimaListing
+                        ? "Alfima Realty Inc."
+                        : listedAgent.name}
                     </h4>
                     {listedAgent.specialization && (
                       <p className="text-xs text-muted-foreground mb-1">
